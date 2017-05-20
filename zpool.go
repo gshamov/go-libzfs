@@ -96,6 +96,7 @@ type VDevTree struct {
 	Devices  []VDevTree // groups other devices (e.g. mirror)
 	Parity   uint
 	Path     string
+	Id       uint64
 	Name     string
 	Stat     VDevStat
 	ScanStat PoolScanStat
@@ -146,6 +147,7 @@ func poolGetConfig(name string, nv *C.nvlist_t) (vdevs VDevTree, err error) {
 	var dtype *C.char
 	var c, children C.uint_t
 	var notpresent C.uint64_t
+	var id C.uint64_t
 	var vs *C.vdev_stat_t
 	var ps *C.pool_scan_stat_t
 	var child **C.nvlist_t
@@ -158,6 +160,11 @@ func poolGetConfig(name string, nv *C.nvlist_t) (vdevs VDevTree, err error) {
 	if vdevs.Type == VDevTypeMissing || vdevs.Type == VDevTypeHole {
 		return
 	}
+
+	if C.nvlist_lookup_uint64(nv, C.sZPOOL_CONFIG_ID, &id) != 0 {
+		return
+	}
+	vdevs.Id = uint64(id)
 
 	// Fetch vdev state
 	if 0 != C.nvlist_lookup_uint64_array_vds(nv, C.sZPOOL_CONFIG_VDEV_STATS,
